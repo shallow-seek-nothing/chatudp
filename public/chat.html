@@ -1,0 +1,581 @@
+<!doctype html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#040605">
+<title>ChatUDP</title>
+<link rel="icon" type="image/png" href="/assets/favicon.png">
+<link rel="stylesheet" href="/assets/theme.css">
+<style>
+  * { box-sizing: border-box; }
+  html { height: 100%; }
+  body {
+    margin: 0;
+    height: 100%;
+    overflow: hidden;
+    background: #040605;
+    color: #eafbf3;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  .layout { display: flex; height: 100vh; }
+
+  /* ---------------- 左侧栏 ---------------- */
+  .sidebar {
+    width: 300px;
+    flex: 0 0 300px;
+    padding: 18px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    border-right: 1px solid rgba(0, 255, 156, 0.08);
+    background: #050908;
+  }
+  .side-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
+  .brand-fish { height: 24px; width: auto; filter: drop-shadow(0 0 10px rgba(0, 255, 156, 0.5)); }
+  .brand-name {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.03em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .lang {
+    display: inline-flex; padding: 2px; gap: 1px; flex: 0 0 auto;
+    border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 999px;
+  }
+  .lang button {
+    border: 0; background: transparent; color: var(--muted);
+    font-size: 10.5px; padding: 4px 7px; border-radius: 999px; cursor: pointer;
+  }
+  .lang button[aria-pressed="true"] {
+    background: rgba(0, 255, 156, 0.13); color: #b9ffe0;
+    box-shadow: inset 0 0 0 1px rgba(0, 255, 156, 0.35);
+  }
+  .escape {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    padding: 12px 14px; border-radius: 12px;
+    border: 1px solid rgba(0, 255, 156, 0.16);
+    background: rgba(0, 255, 156, 0.04);
+    color: #cfeee0; font-size: 13px; letter-spacing: 0.02em;
+    transition: border-color 0.2s, background 0.2s, color 0.2s, box-shadow 0.2s;
+  }
+  .escape svg { width: 16px; height: 16px; opacity: 0.8; flex: 0 0 auto; }
+  .escape:hover {
+    border-color: rgba(0, 255, 156, 0.45);
+    background: rgba(0, 255, 156, 0.08);
+    color: #f2fff9;
+    box-shadow: 0 0 24px -8px rgba(0, 255, 156, 0.4);
+  }
+
+  /* ---------------- 主区域 ---------------- */
+  .main {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background:
+      radial-gradient(920px 540px at 50% 26%, rgba(0, 255, 156, 0.07), transparent 70%),
+      radial-gradient(1200px 800px at 50% 120%, rgba(0, 255, 156, 0.05), transparent 70%);
+  }
+  .main::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background-image:
+      linear-gradient(rgba(120, 255, 200, 0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120, 255, 200, 0.04) 1px, transparent 1px);
+    background-size: 72px 72px;
+    -webkit-mask-image: radial-gradient(ellipse 72% 62% at 50% 40%, #000 0%, transparent 100%);
+    mask-image: radial-gradient(ellipse 72% 62% at 50% 40%, #000 0%, transparent 100%);
+  }
+  .stage { position: relative; height: 100%; }
+
+  /* 空状态 */
+  .empty {
+    position: absolute; inset: 0;
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    transition: opacity 0.45s ease, transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .empty-logo { height: 44px; width: auto; filter: drop-shadow(0 0 18px rgba(0, 255, 156, 0.55)); }
+  .empty-title { font-size: 26px; font-weight: 500; letter-spacing: 0.1em; color: #eafbf3; }
+  body.chatting .empty { opacity: 0; transform: translateY(-46px); pointer-events: none; }
+
+  /* 文字流：只追加的终端记录，旧内容全部保留 */
+  .thread {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(840px, calc(100% - 72px));
+    top: 9vh;
+    bottom: 210px;
+    overflow-y: auto;
+    padding-right: 10px;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 255, 156, 0.25) transparent;
+  }
+  .thread::-webkit-scrollbar { width: 6px; }
+  .thread::-webkit-scrollbar-thumb { background: rgba(0, 255, 156, 0.22); border-radius: 999px; }
+  .line { font-family: var(--font-mono); animation: lineIn 0.35s ease-out both; margin: 0 0 10px; }
+  .line .prefix { margin-right: 0.55em; }
+  .line .body { word-break: break-word; overflow-wrap: anywhere; white-space: pre-wrap; }
+  .line-question {
+    color: #f4fffa;
+    font-size: clamp(20px, 2vw, 27px);
+    line-height: 1.45;
+    margin-top: 30px;
+    margin-bottom: 14px;
+    text-shadow: 0 0 34px rgba(0, 255, 156, 0.1);
+  }
+  .thread .line-question:first-child { margin-top: 0; }
+  .line-question .prefix { color: rgba(244, 255, 250, 0.72); font-size: 0.78em; }
+  .line-reply { color: #2fffb4; font-size: clamp(17px, 1.6vw, 21px); line-height: 1.5; margin-bottom: 8px; }
+  .line-reply .prefix { color: rgba(47, 255, 180, 0.78); }
+  .line-system { color: #7d9488; font-size: 13px; line-height: 1.8; margin-bottom: 6px; }
+  .line-system .prefix { color: rgba(125, 148, 136, 0.72); }
+  .line-system.dropped { color: #ff5f5f; }
+  .line-system.dropped .prefix { color: rgba(255, 95, 95, 0.65); }
+
+  @keyframes lineIn {
+    from { opacity: 0; transform: translateY(10px); filter: blur(6px); }
+    to { opacity: 1; transform: translateY(0); filter: blur(0); }
+  }
+  .line.fading { animation: lineOut 0.4s ease forwards; pointer-events: none; }
+  @keyframes lineOut {
+    from { opacity: 1; filter: blur(0); transform: translateY(0); }
+    to { opacity: 0; filter: blur(8px); transform: translateY(-12px); }
+  }
+
+  /* 输入框（与落地页一致） */
+  .ask {
+    position: absolute;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(880px, calc(100% - 72px));
+    bottom: 16%;
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    padding: 22px 18px 10px;
+    border: 1px solid rgba(0, 255, 156, 0.22);
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(10, 22, 17, 0.88), rgba(5, 12, 9, 0.88));
+    box-shadow:
+      0 0 0 1px rgba(0, 255, 156, 0.03) inset,
+      0 30px 90px -40px rgba(0, 255, 156, 0.35);
+    transition: bottom 0.55s cubic-bezier(0.2, 0.8, 0.2, 1), border-color 0.25s, box-shadow 0.25s;
+  }
+  body.chatting .ask { bottom: 26px; }
+  .ask:focus-within {
+    border-color: rgba(0, 255, 156, 0.55);
+    box-shadow:
+      0 0 0 1px rgba(0, 255, 156, 0.06) inset,
+      0 0 50px -10px rgba(0, 255, 156, 0.35);
+  }
+  .ask-input {
+    width: 100%;
+    background: none;
+    border: 0;
+    outline: none;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 16px;
+    letter-spacing: 0.01em;
+    padding: 2px 0;
+  }
+  .ask-input::placeholder { color: #6c8478; }
+  .ask-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .tags { display: flex; flex-wrap: wrap; gap: 10px; }
+  .tag {
+    display: inline-flex; align-items: center; gap: 8px;
+    height: 32px; padding: 0 13px; border-radius: 999px;
+    border: 1px solid rgba(0, 255, 156, 0.2);
+    background: rgba(0, 255, 156, 0.05);
+    color: #9fe8c4; font-size: 12.5px; letter-spacing: 0.03em;
+    cursor: default; user-select: none;
+  }
+  .tag-fish { height: 14px; width: auto; opacity: 0.9; }
+  .send {
+    flex: 0 0 auto;
+    width: 46px; height: 46px;
+    border-radius: 50%;
+    border: 0;
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    background: var(--green);
+    color: #04120c;
+    box-shadow:
+      0 0 0 1px rgba(0, 255, 156, 0.4),
+      0 0 26px rgba(0, 255, 156, 0.45);
+    transition: transform 0.15s, box-shadow 0.2s, filter 0.2s;
+  }
+  .send:hover {
+    filter: brightness(1.08);
+    box-shadow:
+      0 0 0 1px rgba(0, 255, 156, 0.6),
+      0 0 34px rgba(0, 255, 156, 0.65);
+  }
+  .send:active { transform: translateY(1px) scale(0.98); }
+  .send .send-fish { width: 24px; height: 24px; }
+
+  @media (max-width: 860px) {
+    .layout { flex-direction: column; }
+    .sidebar {
+      width: 100%;
+      flex: 0 0 auto;
+      flex-wrap: wrap;
+      flex-direction: row;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      border-right: 0;
+      border-bottom: 1px solid rgba(0, 255, 156, 0.08);
+    }
+    .side-head { flex: 1 1 auto; min-width: 0; }
+    .escape { width: 100%; justify-content: center; }
+    .main { flex: 1; min-height: 0; }
+    .thread { top: 24px; bottom: 180px; width: calc(100% - 32px); }
+    .ask { width: calc(100% - 32px); bottom: 12%; }
+    body.chatting .ask { bottom: 18px; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="side-head">
+      <a class="brand" href="/" aria-label="Shallow &amp; Seek Nothing">
+        <img class="brand-fish" src="/assets/logo.png" alt="">
+        <span class="brand-name">Shallow &amp; Seek Nothing</span>
+      </a>
+      <div class="lang" role="group" aria-label="Switch language">
+        <button type="button" data-lang-btn="zh" aria-pressed="false">中文</button>
+        <button type="button" data-lang-btn="en" aria-pressed="true">EN</button>
+      </div>
+    </div>
+    <a class="escape" id="escape" href="#" target="_blank" rel="noopener noreferrer">
+      <span data-i18n="escape">逃生出口 / Escape Hatch</span>
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </a>
+  </aside>
+
+  <main class="main">
+    <div class="stage" id="stage">
+      <div class="empty" id="empty">
+        <img class="empty-logo" src="/assets/logo.png" alt="">
+        <div class="empty-title">ChatUDP</div>
+      </div>
+
+      <section class="thread" id="thread" aria-live="polite"></section>
+
+      <form class="ask" id="ask" autocomplete="off">
+        <input
+          class="ask-input"
+          id="text"
+          type="text"
+          maxlength="200"
+          placeholder="&gt; Fire &amp; Forget ..."
+          data-i18n-placeholder="placeholder"
+          aria-label="Message"
+          spellcheck="false"
+        >
+        <div class="ask-row">
+          <div class="tags">
+            <span class="tag">
+              <img class="tag-fish" src="/assets/logo.png" alt="">
+              <span data-i18n="pillModel">MolaChaos-0.5K V0.1 1110</span>
+            </span>
+          </div>
+          <button class="send" type="submit" aria-label="Send" data-i18n-aria="sendAria">
+            <svg class="send-fish" viewBox="0 0 24 24" aria-hidden="true">
+              <path fill="currentColor" fill-rule="evenodd" d="M12 22C8.2 18.9 6 15.8 6 12.4 6 8.9 8.7 6.4 12 6.4c3.3 0 6 2.5 6 6 0 3.4-2.2 6.5-6 9.6zM12 15.4a1.3 1.3 0 1 0 .001 0z"/>
+              <path fill="currentColor" d="M12 7.6 7.4 2.2c3 1.2 6.2 1.2 9.2 0L12 7.6z"/>
+            </svg>
+          </button>
+        </div>
+      </form>
+    </div>
+  </main>
+</div>
+
+<script src="/assets/i18n.js"></script>
+<script src="/assets/escape-sites.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var I18N = window.SeekerI18N;
+  function t(key) { return I18N.t(key); }
+
+  var body = document.body;
+  var thread = document.getElementById('thread');
+  var askForm = document.getElementById('ask');
+  var input = document.getElementById('text');
+  var escapeBtn = document.getElementById('escape');
+
+  var DROP_TIMEOUT_MS = 15000;
+  var TYPE_SPEED_MS = 26;
+  var MAX_LINES = 5;   // 日志只保留最近 5 行，新的进来时旧的淡出隐去
+
+  var state = {
+    cycle: 0,
+    timer: null,
+    typing: null,
+    pendingQ: null,
+    replyTo: null,   // 收到「新消息」后可直回给它的发送者
+    avoid: null      // 新消息要避开的刚对话过的人
+  };
+
+  /* ------------------------------------------------ 身份 */
+
+  function uuid4() {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+      try { return window.crypto.randomUUID(); } catch (e) { /* ignore */ }
+    }
+    var b = new Uint8Array(16);
+    if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(b);
+    else for (var i = 0; i < 16; i++) b[i] = Math.floor(Math.random() * 256);
+    b[6] = (b[6] & 15) | 64;
+    b[8] = (b[8] & 63) | 128;
+    var hex = '';
+    for (var j = 0; j < 16; j++) hex += (b[j] + 256).toString(16).slice(1);
+    return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
+  }
+
+  // 每个标签页一个独立身份：sessionStorage 按标签页隔离，
+  // 同一浏览器开多个页面就是多个在线用户（localStorage 会让所有标签共用一个 UUID）。
+  function getMyId() {
+    try {
+      var id = window.sessionStorage.getItem('chatudp.uuid');
+      if (!id) { id = uuid4(); window.sessionStorage.setItem('chatudp.uuid', id); }
+      return id;
+    } catch (e) { return uuid4(); }
+  }
+
+  var myId = getMyId();
+
+  /* ------------------------------------------------ 记录流 */
+
+  function questionPrefix() { return t('you') + ' >'; }   // 你 > / You >
+  function replyPrefix() { return 'MolaChaos-0.5K V0.1 1110 >'; }
+  function systemPrefix() { return '> [System]'; }
+
+  function makeLine(cls, prefixText, bodyText) {
+    var line = document.createElement('div');
+    line.className = 'line ' + cls;
+    var prefix = document.createElement('span');
+    prefix.className = 'prefix';
+    prefix.textContent = prefixText;
+    var bodyEl = document.createElement('span');
+    bodyEl.className = 'body';
+    bodyEl.textContent = bodyText;
+    line.appendChild(prefix);
+    line.appendChild(document.createTextNode(' '));
+    line.appendChild(bodyEl);
+    return line;
+  }
+
+  function scrollBottom() {
+    thread.scrollTop = thread.scrollHeight;
+  }
+
+  /** 只保留最近 MAX_LINES 行：超出时最旧的一行淡出并从 DOM 移除。 */
+  function trimThread() {
+    var lines = Array.prototype.slice.call(thread.querySelectorAll('.line:not(.fading)'));
+    while (lines.length > MAX_LINES) {
+      var old = lines.shift();
+      old.classList.add('fading');
+      window.setTimeout((function (el) {
+        return function () {
+          if (el.parentNode) el.parentNode.removeChild(el);
+        };
+      })(old), 420);
+    }
+  }
+
+  function finishTyping() {
+    if (state.typing) {
+      window.clearInterval(state.typing.id);
+      if (state.typing.el) state.typing.el.textContent = state.typing.full;
+      state.typing = null;
+    }
+  }
+
+  function typeInto(el, text, speed) {
+    finishTyping();
+    el.textContent = '';
+    var i = 0;
+    var id = window.setInterval(function () {
+      i += 1;
+      el.textContent = text.slice(0, i);
+      scrollBottom();
+      if (i >= text.length) {
+        window.clearInterval(id);
+        state.typing = null;
+      }
+    }, speed);
+    state.typing = { id: id, el: el, full: text };
+  }
+
+  function systemText(kind) {
+    if (kind === 'dropped') return t('dropped');
+    if (kind === 'received') return t('received');
+    return t('broadcast');
+  }
+
+  function appendQuestion(text) {
+    finishTyping();
+    thread.appendChild(makeLine('line-question', questionPrefix(), text));
+    scrollBottom();
+    trimThread();
+  }
+
+  function appendReply(text) {
+    finishTyping();
+    thread.appendChild(makeLine('line-reply', replyPrefix(), text));
+    scrollBottom();
+    trimThread();
+  }
+
+  function appendSystem(kind) {
+    finishTyping();
+    var line = makeLine('line-system', systemPrefix(), '');
+    line.setAttribute('data-sys', kind);
+    if (kind === 'dropped') line.classList.add('dropped');
+    var bodyEl = line.querySelector('.body');
+    thread.appendChild(line);
+    scrollBottom();
+    if (kind === 'broadcast') typeInto(bodyEl, systemText(kind), TYPE_SPEED_MS);
+    else bodyEl.textContent = systemText(kind);
+    trimThread();
+  }
+
+  /* ------------------------------------------------ 发送 / 收包 */
+
+  function startDropTimer(cycle) {
+    window.clearTimeout(state.timer);
+    state.timer = window.setTimeout(function () {
+      state.timer = null;
+      if (cycle !== state.cycle) return;
+      appendSystem('dropped');
+    }, DROP_TIMEOUT_MS);
+  }
+
+  function sendText(raw) {
+    var text = String(raw || '').trim();
+    if (!text) return;
+    input.value = '';
+    body.classList.add('chatting');
+
+    var cycle = ++state.cycle;
+    window.clearTimeout(state.timer);
+    state.timer = null;
+
+    appendQuestion(text);
+    appendSystem('broadcast');
+    startDropTimer(cycle);
+
+    // 接龙规则：
+    //  - 手上有「刚收到的新消息」→ 回复直接送回发送者；
+    //  - 否则发新消息，并尽量避开上一轮对话的人；
+    //  - 回复用完即清空，之后的发送默认是新消息。
+    var replyTo = state.replyTo;
+    var avoid = replyTo ? null : state.avoid;
+    state.replyTo = null;
+    state.avoid = replyTo || null;
+
+    var payload = { uuid: myId, text: text };
+    if (replyTo) payload.replyTo = replyTo;
+    else if (avoid) payload.avoid = avoid;
+
+    fetch('/api/send', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (res) {
+      if (res.status !== 200) {
+        // 风控 / 限流：静默丢弃，但记录一条系统日志
+        window.clearTimeout(state.timer);
+        state.timer = null;
+        appendSystem('dropped');
+      }
+    }).catch(function () { /* 网络异常同样静默 */ });
+  }
+
+  /* ------------------------------------------------ 收到消息 */
+
+  function onIncoming(d) {
+    var hadPending = !!state.timer;
+    window.clearTimeout(state.timer);
+    state.timer = null;
+    if (!body.classList.contains('chatting')) body.classList.add('chatting');
+    appendReply(d.text);
+
+    // 新消息（type=new）可以直回发送者；回复（type=reply）不能再回到对方，
+    // 下一次发送会被当成新消息，并尽量避开对方。
+    state.replyTo = d.type === 'new' && d.from ? d.from : null;
+    state.avoid = d.from || null;
+
+    if (hadPending) appendSystem('received');
+  }
+
+  /* ------------------------------------------------ 事件绑定 */
+
+  askForm.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    sendText(text);
+  });
+
+  escapeBtn.addEventListener('click', function (ev) {
+    ev.preventDefault();
+    var sites = window.ESCAPE_SITES || [];
+    if (!sites.length) return;
+    var pick = sites[Math.floor(Math.random() * sites.length)];
+    window.open(pick.url, '_blank', 'noopener,noreferrer');
+  });
+
+  document.addEventListener('seeker:lang', function () {
+    finishTyping();
+    var qs = thread.querySelectorAll('.line-question .prefix');
+    for (var i = 0; i < qs.length; i++) qs[i].textContent = questionPrefix();
+    var sp = thread.querySelectorAll('.line-system .prefix');
+    for (var j = 0; j < sp.length; j++) sp[j].textContent = systemPrefix();
+    var sysLines = thread.querySelectorAll('.line-system');
+    for (var k = 0; k < sysLines.length; k++) {
+      var kind = sysLines[k].getAttribute('data-sys');
+      var bodyEl = sysLines[k].querySelector('.body');
+      if (bodyEl) bodyEl.textContent = systemText(kind);
+    }
+  });
+
+  // 从落地页带过来的文字：连上之后立刻发送（“已经是发送状态”）
+  try {
+    var q = new URLSearchParams(window.location.search).get('q');
+    if (q) {
+      state.pendingQ = q;
+      window.history.replaceState(null, '', '/chat');
+    }
+  } catch (e) { /* ignore */ }
+
+  // SSE
+  var es = new EventSource('/api/stream?uuid=' + encodeURIComponent(myId));
+  es.addEventListener('hello', function () {
+    if (state.pendingQ) {
+      var pending = state.pendingQ;
+      state.pendingQ = null;
+      sendText(pending);
+    }
+  });
+  es.addEventListener('incoming', function (ev) {
+    var d = JSON.parse(ev.data);
+    onIncoming(d);
+  });
+})();
+</script>
+</body>
+</html>

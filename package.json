@@ -1,0 +1,28 @@
+{
+  "name": "chatudp",
+  "version": "0.0.1-alpha",
+  "description": "A connectionless, unreliable, shameless chat service. We don't compute vectors. We just break context. Powered by HHM (Human Haphazard Model).",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/smoke.js"
+  },
+  "engines": {
+    "node": ">=16"
+  },
+  "keywords": [
+    "chat",
+    "udp",
+    "openai-api",
+    "llm",
+    "experimental",
+    "art-project",
+    "ephemeral",
+    "lm-studio",
+    "human-haphazard-model",
+    "packet-loss",
+    "zero-dependency",
+    "minimal"
+  ],
+  "license": "MIT"
+}

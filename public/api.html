@@ -1,0 +1,710 @@
+<!doctype html>
+<html lang="en" data-lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#040605">
+<title>API · Shallow &amp; Seek Nothing</title>
+<link rel="icon" type="image/png" href="/assets/favicon.png">
+<link rel="stylesheet" href="/assets/theme.css">
+<style>
+  * { box-sizing: border-box; }
+  html { height: 100%; }
+  body {
+    margin: 0;
+    min-height: 100%;
+    background: #040605;
+    color: #eafbf3;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  .layout { display: flex; min-height: 100vh; }
+
+  /* ---------------- 侧边栏 ---------------- */
+  .sidebar {
+    width: 300px;
+    flex: 0 0 300px;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    padding: 18px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    border-right: 1px solid rgba(0, 255, 156, 0.08);
+    background: #050908;
+  }
+  .side-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .brand { display: flex; align-items: center; gap: 9px; min-width: 0; }
+  .brand-fish { height: 24px; width: auto; filter: drop-shadow(0 0 10px rgba(0, 255, 156, 0.5)); }
+  .brand-name {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.03em;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .lang {
+    display: inline-flex; padding: 2px; gap: 1px; flex: 0 0 auto;
+    border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 999px;
+  }
+  .lang button {
+    border: 0; background: transparent; color: var(--muted);
+    font-size: 10.5px; padding: 4px 7px; border-radius: 999px; cursor: pointer;
+  }
+  .lang button[aria-pressed="true"] {
+    background: rgba(0, 255, 156, 0.13); color: #b9ffe0;
+    box-shadow: inset 0 0 0 1px rgba(0, 255, 156, 0.35);
+  }
+
+  .side-nav { display: flex; flex-direction: column; gap: 4px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px; border-radius: 10px;
+    color: #9fb8ab; font-size: 13.5px; letter-spacing: 0.02em;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+  }
+  .nav-item svg { width: 18px; height: 18px; opacity: 0.85; flex: 0 0 auto; }
+  .nav-item:hover { background: rgba(0, 255, 156, 0.05); color: #d9fff0; }
+  .nav-item.active {
+    background: rgba(0, 255, 156, 0.1);
+    color: #eafff7;
+    box-shadow: inset 0 0 0 1px rgba(0, 255, 156, 0.25);
+  }
+  .side-foot { margin-top: auto; }
+  .back { display: inline-flex; align-items: center; gap: 6px; color: #6c8478; font-size: 12.5px; }
+  .back:hover { color: #b9ffe0; }
+
+  /* ---------------- 内容区 ---------------- */
+  .main {
+    flex: 1; min-width: 0;
+    padding: 48px 56px 80px;
+    background:
+      radial-gradient(760px 420px at 60% 0%, rgba(0, 255, 156, 0.06), transparent 70%);
+  }
+  .wrap { max-width: 860px; }
+  .page-head h1 { margin: 0; font-size: 30px; font-weight: 600; letter-spacing: 0.01em; }
+  .sub { margin: 12px 0 0; color: #7d9488; font-size: 13.5px; line-height: 1.8; max-width: 720px; }
+
+  .card {
+    margin-top: 28px;
+    display: flex; flex-direction: column; gap: 14px;
+    padding: 18px 20px;
+    border: 1px solid rgba(0, 255, 156, 0.16);
+    border-radius: 14px;
+    background: rgba(8, 16, 13, 0.5);
+  }
+  .row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .label {
+    min-width: 78px; color: #6c8478; font-size: 12px;
+    letter-spacing: 0.08em; text-transform: uppercase;
+  }
+  code, .mono {
+    font-family: var(--font-mono); font-size: 13.5px; color: #b9ffe0;
+    background: rgba(0, 255, 156, 0.06);
+    border: 1px solid rgba(0, 255, 156, 0.14);
+    border-radius: 8px; padding: 6px 10px;
+  }
+  .ghost {
+    background: transparent; border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #cfe8dc; font: inherit; font-size: 12.5px;
+    padding: 7px 12px; border-radius: 8px; cursor: pointer;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+  }
+  .ghost:hover { border-color: rgba(0, 255, 156, 0.4); color: #ffffff; background: rgba(0, 255, 156, 0.05); }
+  .ghost.danger:hover { border-color: rgba(255, 95, 95, 0.5); color: #ffb3b3; background: rgba(255, 95, 95, 0.05); }
+
+  .keygen { margin-top: 30px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .primary {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: var(--green); color: #04120c;
+    border: 0; border-radius: 10px;
+    padding: 12px 18px; font: inherit; font-weight: 600; font-size: 13.5px;
+    cursor: pointer;
+    box-shadow: 0 0 26px -8px rgba(0, 255, 156, 0.6);
+    transition: filter 0.2s, transform 0.1s;
+  }
+  .primary:hover { filter: brightness(1.06); }
+  .primary:active { transform: translateY(1px); }
+  .hint { margin: 0; color: #5f7469; font-size: 12px; }
+
+  .keys-wrap {
+    margin-top: 26px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .keys-scroll { overflow-x: auto; }
+  .keys-table { width: 100%; min-width: 720px; border-collapse: collapse; }
+  .keys-table th {
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 11px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
+    color: #5f7469;
+    background: rgba(255, 255, 255, 0.02);
+    white-space: nowrap;
+  }
+  .keys-table td {
+    padding: 14px 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 13px; color: #9fb8ab;
+    vertical-align: middle;
+  }
+  .keys-table .k-name { color: #eafff7; }
+  .keys-table .k-mono {
+    font-family: var(--font-mono); font-size: 12px; color: #7d9488;
+    white-space: nowrap;
+  }
+  .keys-table .k-key {
+    font-family: var(--font-mono); font-size: 13px; color: #2fffb4;
+    white-space: nowrap;
+  }
+  .keys-table .k-act { text-align: right; white-space: nowrap; }
+  .keys-table .k-act .ghost + .ghost { margin-left: 8px; }
+  .keys-table tr.flash { animation: rowFlash 1s ease; }
+  @keyframes rowFlash {
+    0% { background: rgba(0, 255, 156, 0.12); }
+    100% { background: transparent; }
+  }
+  .date-note {
+    margin: 10px 0 0;
+    color: #4f6358; font-size: 11px; line-height: 1.7;
+    max-width: 720px;
+  }
+  .modal-date { margin: 0; color: #6c8478; font-size: 12px; }
+  .modal-date span:last-child { font-family: var(--font-mono); color: #9fb8ab; }
+  .ghost.small { padding: 5px 10px; font-size: 11.5px; }
+  .empty-keys {
+    margin-top: 26px; padding: 22px;
+    border: 1px dashed rgba(255, 255, 255, 0.1); border-radius: 12px;
+    color: #5f7469; font-size: 13px; text-align: center;
+  }
+
+  /* 生成后的仪式感弹框 */
+  .modal {
+    position: fixed; inset: 0; z-index: 50;
+    display: flex; align-items: center; justify-content: center;
+    padding: 24px;
+  }
+  .modal-backdrop {
+    position: absolute; inset: 0;
+    background: rgba(2, 5, 4, 0.74);
+    backdrop-filter: blur(4px);
+  }
+  .modal-card {
+    position: relative;
+    width: min(560px, 100%);
+    display: flex; flex-direction: column; gap: 16px;
+    padding: 26px;
+    border: 1px solid rgba(0, 255, 156, 0.25);
+    border-radius: 18px;
+    background: #07100c;
+    box-shadow: 0 30px 90px -40px rgba(0, 255, 156, 0.45);
+  }
+  .modal-card h2 { margin: 0; font-size: 18px; font-weight: 600; color: #eafff7; }
+  .modal-note { margin: 0; color: #7d9488; font-size: 12.5px; line-height: 1.75; }
+  .field { display: flex; flex-direction: column; gap: 8px; color: #6c8478; font-size: 12px; letter-spacing: 0.04em; }
+  .field input {
+    background: #040605;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    padding: 11px 12px;
+    color: #eafff7; font: inherit; font-size: 13.5px;
+    outline: none;
+  }
+  .field input:focus { border-color: rgba(0, 255, 156, 0.5); }
+  .key-reveal { display: flex; align-items: center; gap: 10px; }
+  .key-reveal code {
+    flex: 1; min-width: 0;
+    padding: 12px 14px;
+    border: 1px solid rgba(0, 255, 156, 0.18);
+    border-radius: 10px;
+    background: rgba(0, 255, 156, 0.06);
+    color: #2fffb4;
+    font-family: var(--font-mono); font-size: 13px;
+    overflow-wrap: anywhere;
+  }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 4px; }
+
+  /* 文档 */
+  .draft {
+    display: inline-block; margin-top: 20px;
+    color: #ffd27a; border: 1px dashed rgba(255, 210, 122, 0.35);
+    border-radius: 8px; padding: 6px 12px; font-size: 12px;
+  }
+  .docs h2 { margin: 42px 0 12px; font-size: 18px; font-weight: 600; letter-spacing: 0.02em; color: #eafff7; }
+  .docs p { margin: 8px 0; color: #8fa79b; font-size: 13.5px; line-height: 1.9; }
+  .docs p code, .docs li code {
+    font-family: var(--font-mono); font-size: 12.5px;
+    color: #b9ffe0; background: rgba(0, 255, 156, 0.06);
+    border: 1px solid rgba(0, 255, 156, 0.14); border-radius: 6px; padding: 2px 6px;
+  }
+  .docs pre {
+    margin: 14px 0; padding: 16px 18px;
+    background: #050807;
+    border: 1px solid rgba(0, 255, 156, 0.12);
+    border-radius: 12px; overflow-x: auto;
+  }
+  .docs pre code {
+    font-family: var(--font-mono); font-size: 12.5px; line-height: 1.7;
+    color: #c9ffe6; background: none; border: 0; padding: 0;
+  }
+  .docs table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 13px; }
+  .docs th, .docs td {
+    text-align: left; padding: 10px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    color: #9fb8ab;
+  }
+  .docs th { color: #6c8478; font-weight: 500; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .todo {
+    display: inline-block; margin-top: 10px;
+    color: #ffd27a; font-size: 12px;
+    border: 1px dashed rgba(255, 210, 122, 0.35);
+    border-radius: 8px; padding: 4px 10px;
+  }
+  .docs ol.steps { margin: 12px 0; padding-left: 22px; color: #8fa79b; font-size: 13.5px; line-height: 1.9; }
+  .docs ol.steps li { margin: 8px 0; }
+  .docs .inline-link { color: var(--green); border-bottom: 1px dashed rgba(0, 255, 156, 0.5); }
+  .docs .inline-link:hover { color: #b9ffe0; }
+  .docs .muted-inline { margin-left: 8px; color: #5f7469; font-size: 12px; }
+
+  [hidden] { display: none !important; }
+
+  @media (max-width: 860px) {
+    .layout { flex-direction: column; }
+    .sidebar {
+      position: static; width: 100%; flex: 0 0 auto; height: auto;
+      flex-wrap: wrap; flex-direction: row; align-items: center;
+      gap: 12px; padding: 12px 16px;
+      border-right: 0; border-bottom: 1px solid rgba(0, 255, 156, 0.08);
+    }
+    .side-head { flex: 1 1 100%; }
+    .side-nav { flex: 1 1 100%; flex-direction: row; }
+    .nav-item { flex: 1; justify-content: center; }
+    .side-foot { display: none; }
+    .main { padding: 28px 18px 60px; }
+    .label { min-width: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="side-head">
+      <a class="brand" href="/" aria-label="Shallow &amp; Seek Nothing">
+        <img class="brand-fish" src="/assets/logo.png" alt="">
+        <span class="brand-name">Shallow &amp; Seek Nothing</span>
+      </a>
+      <div class="lang" role="group" aria-label="Switch language">
+        <button type="button" data-lang-btn="zh" aria-pressed="false">中文</button>
+        <button type="button" data-lang-btn="en" aria-pressed="true">EN</button>
+      </div>
+    </div>
+
+    <nav class="side-nav">
+      <a class="nav-item active" href="#keys" data-view="keys">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M14.5 9.5a3.5 3.5 0 1 0-4.9 3.2L4 18.3V21h3l.8-.8H10l.8-.8v-1.6l1.2-1.2A3.5 3.5 0 0 0 14.5 9.5z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          <circle cx="15.8" cy="8.2" r="1" fill="currentColor"/>
+        </svg>
+        <span data-i18n="navKeys">API Keys</span>
+      </a>
+      <a class="nav-item" href="#docs" data-view="docs">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M6 3.5h8.5L19 8v12.5H6z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+          <path d="M14 3.5V8h4.5M9 12h6M9 15.5h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+        </svg>
+        <span data-i18n="navDocs">API Docs</span>
+      </a>
+    </nav>
+
+    <div class="side-foot">
+      <a class="back" href="/">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none" aria-hidden="true">
+          <path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span data-i18n="backHome">Back to home</span>
+      </a>
+    </div>
+  </aside>
+
+  <main class="main">
+    <!-- API Keys -->
+    <section class="view" id="view-keys">
+      <div class="wrap">
+        <div class="page-head">
+          <h1 data-i18n="keysTitle">API Keys</h1>
+          <p class="sub" data-i18n="keysSub">Keys for MolaChaos-0.5K V0.1 1110. Purely ceremonial: any string works as a key and nothing is verified.</p>
+        </div>
+
+        <div class="card">
+          <div class="row">
+            <span class="label" data-i18n="baseUrl">Base URL</span>
+            <code class="mono" id="base-url">/v1</code>
+            <button class="ghost" type="button" id="copy-base" data-i18n="copy">Copy</button>
+          </div>
+          <div class="row">
+            <span class="label" data-i18n="modelLabel">Model</span>
+            <code class="mono">MolaChaos-0.5K V0.1 1110</code>
+          </div>
+        </div>
+
+        <div class="keygen">
+          <button class="primary" type="button" id="gen-key">+ <span data-i18n="createKey">Generate new API key</span></button>
+          <p class="hint" data-i18n="keyNote">No verification, no billing — just the ceremony.</p>
+        </div>
+        <p class="date-note" data-i18n="dateNote">These dates are generated locally by your browser. Our servers know nothing about them — just as they know nothing about your existence.</p>
+
+        <div class="keys-wrap">
+          <div class="keys-scroll">
+            <table class="keys-table" id="keys-table">
+              <thead>
+                <tr>
+                  <th data-i18n="colName">Name</th>
+                  <th data-i18n="colTrackingId">Tracking ID</th>
+                  <th data-i18n="colKey">Key</th>
+                  <th data-i18n="colCreated">Created</th>
+                  <th data-i18n="colLastUsed">Last used</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="keys-body"></tbody>
+            </table>
+          </div>
+        </div>
+        <div class="empty-keys" id="empty-keys" data-i18n="emptyKeys">No keys yet.</div>
+      </div>
+    </section>
+
+    <!-- API Docs -->
+    <section class="view docs" id="view-docs" hidden>
+      <div class="wrap">
+        <div class="page-head">
+          <h1 data-i18n="docsTitle">API Reference</h1>
+          <p class="sub" data-i18n="docsSub">MolaChaos-0.5K V0.1 1110 · OpenAI-compatible API</p>
+        </div>
+        <h2 data-i18n="docsClientTitle">接入主流 AI 客户端 / Client Integration</h2>
+        <p data-i18n="docsClientBody">MolaChaos is fully compatible with the OpenAI API format. You can integrate it into LM Studio, Cursor, Chatbox, NextChat, or any tool that supports custom APIs. We have enabled CORS and SSE streaming on the backend.</p>
+
+        <h2 data-i18n="docsConfigTitle">🛠️ 配置参数 / Configuration</h2>
+        <table>
+          <tr>
+            <th data-i18n="docsParam">参数 / PARAM</th>
+            <th data-i18n="docsValue">填入值 / VALUE</th>
+          </tr>
+          <tr>
+            <td><code>API Base URL</code></td>
+            <td><code class="mono" id="docs-base">/v1</code></td>
+          </tr>
+          <tr>
+            <td><code>API Key</code></td>
+            <td>
+              <a class="inline-link" href="#keys" data-i18n="docsKeyApply">点击申请</a>
+              <span class="muted-inline" data-i18n="docsKeyNote">或者随便填（例如 BiBiLaBu），我们不校验。</span>
+            </td>
+          </tr>
+          <tr>
+            <td><code>Model Name</code></td>
+            <td><code>MolaChaos</code> <span class="muted-inline" data-i18n="docsModelNote">必须填这个，否则报错。</span></td>
+          </tr>
+        </table>
+
+        <h2 data-i18n="docsLossTitle">⚠️ 关于“丢包”与客户端超时的特别说明 / Important Notes on Packet Loss</h2>
+        <p data-i18n="docsLossBody">由于我们的模型是基于真实碳基神经元（Human Haphazard Model）驱动的，响应时间完全取决于那个陌生人是否在摸鱼。</p>
+        <p data-i18n="docsLossTimeout">请务必在你的客户端（如 LM Studio）设置中，将请求超时时间（Timeout）调整为 20 秒以上。</p>
+        <p data-i18n="docsLossError">如果 15 秒内无人接盘，API 将返回 HTTP 503 或流式报错。客户端会显示红字（如 "Carbon node is touching grass"）。这不是 Bug，这是原汁原味的 UDP 体验。</p>
+        <p data-i18n="docsLossStream">我们支持 stream: true。当你看到客户端里一个字一个字往外蹦的时候，请感谢那只正在键盘上艰难打字（或踩键盘）的碳基生物。</p>
+
+        <h2 data-i18n="docsLmTitle">💻 示例：在 LM Studio 中调用 / Example: Calling from LM Studio</h2>
+        <ol class="steps">
+          <li data-i18n="docsLmStep1">打开 LM Studio，进入 Local Server 选项卡。</li>
+          <li><span data-i18n="docsLmStep2">在 API Base URL 填入：</span> <code class="mono" id="docs-base-2">/v1</code></li>
+          <li><span data-i18n="docsLmStep3">在 Model 填入：</span> <code>MolaChaos-0.5K</code></li>
+          <li data-i18n="docsLmStep4">在对话框输入任何内容（比如 1+1 等于几），点击发送。</li>
+          <li data-i18n="docsLmStep5">等待 15 秒后，如果收到「比比拉布」或「1+1=王」，说明你已经成功攻破了硅基大模型的防线，接入了碳基真随机网络。</li>
+        </ol>
+
+        <h2 data-i18n="docsNoteTitle">💡 [System Note / 系统备注]</h2>
+        <p data-i18n="docsNoteBody">如果你的 AI 客户端在加载模型时崩溃了，说明碳基节点精神崩溃了。重启客户端将为您路由到另一个节点（或者一只猫）。</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<div class="modal" id="key-modal" hidden>
+  <div class="modal-backdrop"></div>
+  <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <h2 id="modal-title" data-i18n="modalTitle">Create API key</h2>
+    <p class="modal-note" data-i18n="modalNote">Copy it now — after you confirm, only a masked version remains.</p>
+    <p class="modal-date"><span data-i18n="colCreated">Created</span>: <span id="modal-created"></span></p>
+    <label class="field">
+      <span data-i18n="modalName">Name</span>
+      <input id="key-name" type="text" maxlength="40" data-i18n-placeholder="modalNamePlaceholder" placeholder="e.g. My laptop" spellcheck="false">
+    </label>
+    <div class="key-reveal">
+      <code id="modal-key"></code>
+      <button class="ghost" type="button" id="modal-copy" data-i18n="copy">Copy</button>
+    </div>
+    <div class="modal-actions">
+      <button class="primary" type="button" id="modal-confirm" data-i18n="modalConfirm">I saved it</button>
+    </div>
+  </div>
+</div>
+
+<script src="/assets/i18n.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var I18N = window.SeekerI18N;
+  function t(key) { return I18N.t(key); }
+
+  var STORAGE_KEY = 'molachaos.api.keys';
+  var keysBody = document.getElementById('keys-body');
+  var keysTable = document.getElementById('keys-table');
+  var emptyKeys = document.getElementById('empty-keys');
+  var genBtn = document.getElementById('gen-key');
+  var modal = document.getElementById('key-modal');
+  var modalKeyEl = document.getElementById('modal-key');
+  var modalNameEl = document.getElementById('key-name');
+  var modalCopy = document.getElementById('modal-copy');
+  var modalConfirm = document.getElementById('modal-confirm');
+  var pendingKey = null;
+  var flashId = null;
+  var baseUrlEl = document.getElementById('base-url');
+  var docsBaseEl = document.getElementById('docs-base');
+  var docsBase2El = document.getElementById('docs-base-2');
+  var baseUrl = window.location.origin + '/v1';
+  if (baseUrlEl) baseUrlEl.textContent = baseUrl;
+  if (docsBaseEl) docsBaseEl.textContent = baseUrl;
+  if (docsBase2El) docsBase2El.textContent = baseUrl;
+
+  /* ---------------- 视图切换 ---------------- */
+  var navItems = Array.prototype.slice.call(document.querySelectorAll('[data-view]'));
+  var views = {
+    keys: document.getElementById('view-keys'),
+    docs: document.getElementById('view-docs')
+  };
+
+  function setView(name) {
+    if (!views[name]) name = 'keys';
+    views.keys.hidden = name !== 'keys';
+    views.docs.hidden = name !== 'docs';
+    navItems.forEach(function (item) {
+      item.classList.toggle('active', item.getAttribute('data-view') === name);
+    });
+    try {
+      window.history.replaceState(null, '', '/api' + (name === 'docs' ? '#docs' : '#keys'));
+    } catch (e) { /* ignore */ }
+    window.scrollTo(0, 0);
+  }
+
+  navItems.forEach(function (item) {
+    item.addEventListener('click', function (ev) {
+      ev.preventDefault();
+      setView(item.getAttribute('data-view'));
+    });
+  });
+
+  window.addEventListener('hashchange', function () {
+    setView(window.location.hash === '#docs' ? 'docs' : 'keys');
+  });
+
+  /* ---------------- API Keys ---------------- */
+  function loadKeys() {
+    try {
+      var raw = window.localStorage.getItem(STORAGE_KEY);
+      var list = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(list)) return [];
+      return list.map(function (item) {
+        return {
+          id: item.id || randomHex(8),
+          trackingId: item.trackingId || item.id || makeTrackingId(),
+          name: typeof item.name === 'string' ? item.name : '',
+          key: item.key,
+          createdAt: item.createdAt || Date.now(),
+          lastUsedAt: item.lastUsedAt || null
+        };
+      });
+    } catch (e) { return []; }
+  }
+
+  function saveKeys(list) {
+    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); } catch (e) { /* ignore */ }
+  }
+
+  function randomHex(bytes) {
+    var b = new Uint8Array(bytes);
+    if (window.crypto && window.crypto.getRandomValues) window.crypto.getRandomValues(b);
+    else for (var i = 0; i < bytes; i++) b[i] = Math.floor(Math.random() * 256);
+    var out = '';
+    for (var j = 0; j < b.length; j++) out += (b[j] + 256).toString(16).slice(1);
+    return out;
+  }
+
+  function makeTrackingId() {
+    return randomHex(4).slice(0, 7) + '-' + randomHex(2).slice(0, 3);
+  }
+
+  function formatDateTime(ts) {
+    var d = new Date(ts);
+    function p(n) { return (n < 10 ? '0' : '') + n; }
+    return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+  }
+
+  function maskKey(key) {
+    if (!key) return '';
+    if (key.length <= 18) return key.slice(0, 4) + '****';
+    return key.slice(0, 12) + '****' + key.slice(-4);
+  }
+
+  function copyText(text, btn) {
+    function done() {
+      if (!btn) return;
+      var old = btn.textContent;
+      btn.textContent = t('copied');
+      window.setTimeout(function () { btn.textContent = old; }, 1200);
+    }
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(done, done);
+        return;
+      }
+    } catch (e) { /* ignore */ }
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); } catch (e) { /* ignore */ }
+    document.body.removeChild(ta);
+    done();
+  }
+
+  /* 仪式感：弹框展示完整 Key → 确认后列表只保留打码版本 */
+  function openModal() {
+    pendingKey = {
+      trackingId: makeTrackingId(),
+      key: 'sk-mola-' + randomHex(20),
+      createdAt: Date.now()
+    };
+    modalKeyEl.textContent = pendingKey.key;
+    document.getElementById('modal-created').textContent = formatDateTime(pendingKey.createdAt);
+    modalNameEl.value = '';
+    modal.hidden = false;
+    modalNameEl.focus();
+  }
+
+  function closeModal() {
+    modal.hidden = true;
+    pendingKey = null;
+  }
+
+  function confirmModal() {
+    if (!pendingKey) { closeModal(); return; }
+    var list = loadKeys();
+    list.push({
+      id: pendingKey.trackingId,
+      trackingId: pendingKey.trackingId,
+      name: (modalNameEl.value || '').trim(),
+      key: pendingKey.key,
+      createdAt: pendingKey.createdAt,
+      lastUsedAt: null
+    });
+    saveKeys(list);
+    closeModal();
+    renderKeys();
+  }
+
+  function renderKeys() {
+    var list = loadKeys();
+    keysBody.innerHTML = '';
+    var empty = list.length === 0;
+    emptyKeys.hidden = !empty;
+    keysTable.hidden = empty;
+    if (empty) return;
+
+    list.slice().reverse().forEach(function (item) {
+      var tr = document.createElement('tr');
+
+      var tdName = document.createElement('td');
+      tdName.className = 'k-name';
+      tdName.textContent = item.name || t('unnamedKey');
+      tr.appendChild(tdName);
+
+      var tdTid = document.createElement('td');
+      tdTid.className = 'k-mono';
+      tdTid.textContent = item.trackingId;
+      tr.appendChild(tdTid);
+
+      var tdKey = document.createElement('td');
+      tdKey.className = 'k-key';
+      tdKey.textContent = maskKey(item.key);
+      tr.appendChild(tdKey);
+
+      var tdCreated = document.createElement('td');
+      tdCreated.className = 'k-mono';
+      tdCreated.textContent = formatDateTime(item.createdAt);
+      tr.appendChild(tdCreated);
+
+      var tdUsed = document.createElement('td');
+      tdUsed.className = 'k-mono';
+      tdUsed.textContent = item.lastUsedAt ? formatDateTime(item.lastUsedAt) : '—';
+      tr.appendChild(tdUsed);
+
+      var tdAct = document.createElement('td');
+      tdAct.className = 'k-act';
+
+      var useBtn = document.createElement('button');
+      useBtn.type = 'button';
+      useBtn.className = 'ghost small';
+      useBtn.textContent = t('useKey');
+      useBtn.addEventListener('click', function () {
+        var next = loadKeys().map(function (x) {
+          return x.id === item.id ? Object.assign({}, x, { lastUsedAt: Date.now() }) : x;
+        });
+        saveKeys(next);
+        flashId = item.id;
+        renderKeys();
+      });
+
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.className = 'ghost danger small';
+      del.textContent = t('deleteKey');
+      del.addEventListener('click', function () {
+        var next = loadKeys().filter(function (x) { return x.id !== item.id; });
+        saveKeys(next);
+        renderKeys();
+      });
+
+      tdAct.appendChild(useBtn);
+      tdAct.appendChild(del);
+      tr.appendChild(tdAct);
+
+      if (flashId === item.id) {
+        tr.classList.add('flash');
+        flashId = null;
+      }
+
+      keysBody.appendChild(tr);
+    });
+  }
+
+  genBtn.addEventListener('click', openModal);
+  modalCopy.addEventListener('click', function () {
+    if (pendingKey) copyText(pendingKey.key, modalCopy);
+  });
+  modalConfirm.addEventListener('click', confirmModal);
+  document.getElementById('copy-base').addEventListener('click', function () {
+    copyText(baseUrl, this);
+  });
+
+  document.addEventListener('seeker:lang', function () { renderKeys(); });
+  window.addEventListener('keydown', function (ev) {
+    if (ev.key === 'Escape' && !modal.hidden) closeModal();
+  });
+
+  /* ---------------- 初始化 ---------------- */
+  setView(window.location.hash === '#docs' ? 'docs' : 'keys');
+  renderKeys();
+})();
+</script>
+</body>
+</html>
