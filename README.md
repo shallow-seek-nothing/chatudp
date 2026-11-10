@@ -24,12 +24,12 @@
 **Zero dependencies · no database · everything lives in memory.** One Node.js file + static pages.
 **零依赖 · 无数据库 · 一切只存在内存里。** 一个 Node.js 文件 + 静态页面。
 
-> 🚧 **Status: V0.0.1α (Basking in the void)**
+> 🚧 **Status: V0.0.2α (Basking in the void)**
 > The core is here. But remember, we operate on UDP. If something is missing, assume it was dropped
 > during transmission. Try refreshing your reality later.
 > See [CHANGELOG.md](CHANGELOG.md) for the version history.
 >
-> 🚧 **状态：V0.0.1α（在虚空中晒太阳）**
+> 🚧 **状态：V0.0.2α（在虚空中晒太阳）**
 > 核心已经在了。但记住，我们跑在 UDP 上：如果有什么东西不见了，请假设它在传输途中被丢掉了。过一会儿刷新你的现实试试。
 > 版本记录见 [CHANGELOG.md](CHANGELOG.md)。
 
@@ -67,6 +67,23 @@ server drops your message, it's because the packet was too watery.
 | --- | --- |
 | ![API Keys](docs/api-keys.png) | ![API Docs](docs/api-docs.png) |
 
+## 🎬 MV / 音乐视频
+
+[![Packet dropped! MV cover](mv/cover-16x9.png)](https://www.bilibili.com/video/BV185WL6HEM6)
+
+**Packet dropped! 丢包啦！** — official MV / 官方 MV · **02:13** · 1080p
+
+Lyrics are rendered right where the landing-page headline sits, synced line by line.
+歌词直接打在首页大标题的位置上，逐句同步。
+
+- [Watch on Bilibili / 在 B 站观看](https://www.bilibili.com/video/BV185WL6HEM6)
+- [Watch / download · MP4](mv/chatudp-mv.mp4)
+- [Audio · WAV](mv/packet-dropped-final.wav)
+- [Lyrics · SRT](mv/packet-dropped.srt)
+- Covers / 封面: [16:9](mv/cover-16x9.png) · [4:3](mv/cover-4x3.png)
+
+See [mv/README.md](mv/README.md) for details. / 详情见 [mv/README.md](mv/README.md)。
+
 ## 🎨 Logo / 标志
 
 <p align="center"><img src="public/assets/logo.png" width="110" alt="Mola fish logo"></p>
@@ -103,6 +120,9 @@ released under **CC0 1.0** (public domain) — use it, remix it, print it on a T
 - **Ceremonial API keys / 仪式感 API Key** — generate a key in a modal, copy it, confirm; only a masked version
   is kept. Creation / last-used dates are generated in your browser and never leave it.
   / 弹框里生成、复制、确认；之后只保留打码版本。创建/最后使用日期由浏览器生成，永不离开你的设备。
+- **Official MV / 官方 MV** — a 2:13 music video where the landing-page headline becomes the lyric
+  line; video, audio, subtitles and covers live in `mv/`.
+  / 2:13 的官方 MV：首页大标题变成歌词逐句出现；视频、音频、字幕、封面都在 `mv/`。
 
 ## 📂 Pages / 页面
 
@@ -256,6 +276,7 @@ chatudp/
 │   └── LICENSE            # CC0 1.0 (logo artwork) / 标志素材许可
 ├── test/smoke.js          # zero-dependency smoke tests / 零依赖冒烟测试
 ├── docs/                  # screenshots for README / README 截图
+├── mv/                    # official MV / 官方 MV: video, audio, SRT, covers
 ├── .github/workflows/     # CI
 ├── package.json
 ├── CONTRIBUTING.md
@@ -325,3 +346,4 @@ We do this not because it is useful, but because it is human.
 - **Code / 代码**: [MIT](LICENSE)
 - **Logo artwork / 标志素材**: **CC0 1.0** (public domain / 公有领域) — see [assets-src/LICENSE](assets-src/LICENSE)
 - **Documentation & screenshots / 文档与截图**: CC0 1.0 unless otherwise noted / 除非另有说明，否则为 CC0 1.0
+- **MV & audio / MV 与音频**: **CC0 1.0** — see [mv/README.md](mv/README.md)

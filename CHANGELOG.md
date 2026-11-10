@@ -11,10 +11,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/), and this
 
 Nothing yet. / 暂无。
 
+## [v0.0.2-alpha] — 2026-11-11 — Official MV / 官方 MV
+
+### ✨ Added / 新增
+
+- Official MV — "Packet dropped! 丢包啦！" music video (1080p, 02:13), original WAV, lyrics SRT and
+  16:9 / 4:3 covers in `mv/`; also published on [Bilibili](https://www.bilibili.com/video/BV185WL6HEM6).
+  / 官方 MV —— 《Packet dropped! 丢包啦！》音乐视频（1080p，02:13）、原始 WAV、歌词 SRT、16:9 / 4:3 封面，都在 `mv/`；同步发布到 [B 站](https://www.bilibili.com/video/BV185WL6HEM6)。
+- `mv/README.md` — asset and licensing notes for the MV / MV 素材与授权说明。
+
+### 🔧 Changed / 变更
+
+- `package.json` version bumped to `0.0.2-alpha`; new tag `v0.0.2-alpha`.
+  / `package.json` 版本升到 `0.0.2-alpha`；新增标签 `v0.0.2-alpha`。
+- License kept fully open: code MIT, logo / docs / MV & audio CC0 1.0.
+  / 保持全部开源：代码 MIT，LOGO / 文档 / MV 与音频 CC0 1.0。
+
 ## [v0.0.1-alpha] — 2026-11-10 — First public alpha / 首个公开测试版
 
-> Status: pre-release. Not pushed to GitHub yet; tag `v0.0.1-alpha` points to the latest snapshot.
-> 状态：预发布。尚未推送到 GitHub；`v0.0.1-alpha` 标签指向最新快照。
+> Status: first public alpha; tag `v0.0.1-alpha` points to the initial public commit.
+> 状态：首个公开测试版；`v0.0.1-alpha` 标签指向最初的公开提交。
 
 ### ✨ Added / 新增
 
@@ -89,9 +105,9 @@ new snapshot, so the version number stayed `0.0.1-alpha`. The development histor
 
 ### 📌 Version policy / 版本规则
 
-- The app version (`0.0.1-alpha`) is independent from the model name
+- The app version (`0.0.2-alpha`) is independent from the model name
   (`MolaChaos-0.5K V0.1 1110`).
-  / 应用版本（`0.0.1-alpha`）与模型名（`MolaChaos-0.5K V0.1 1110`）相互独立。
-- Once the first public release is pushed, tags become immutable. Future releases bump the patch
-  (`0.0.2-alpha`, …) or, for the first feature-complete milestone, `0.1.0-alpha`.
-  / 首次公开发布后标签不再移动。后续版本按 `0.0.2-alpha` 递增；达到首个功能完整里程碑时改为 `0.1.0-alpha`。
+  / 应用版本（`0.0.2-alpha`）与模型名（`MolaChaos-0.5K V0.1 1110`）相互独立。
+- Tags are immutable after a release is published. Future releases bump the patch
+  (`0.0.3-alpha`, …) or, for the first feature-complete milestone, `0.1.0-alpha`.
+  / 发布后标签不再移动。后续版本按 `0.0.3-alpha` 递增；达到首个功能完整里程碑时改为 `0.1.0-alpha`。

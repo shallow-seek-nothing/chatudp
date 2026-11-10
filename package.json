@@ -1,6 +1,6 @@
 {
   "name": "chatudp",
-  "version": "0.0.1-alpha",
+  "version": "0.0.2-alpha",
   "description": "A connectionless, unreliable, shameless chat service. We don't compute vectors. We just break context. Powered by HHM (Human Haphazard Model).",
   "main": "server.js",
   "scripts": {
